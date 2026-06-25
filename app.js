@@ -905,9 +905,9 @@ function renderColManager() {
   let html = '';
   for (const [key, label] of Object.entries(COL_LABELS)) {
     const checked = visibleCols.has(key) ? 'checked' : '';
-    html += `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);cursor:pointer">
-      <input type="checkbox" ${checked} onchange="toggleCol('${key}',this.checked)" style="accent-color:var(--accent);flex-shrink:0">
-      <span style="font-size:12px">${label}</span>
+    html += `<label>
+      <input type="checkbox" ${checked} onchange="toggleCol('${key}',this.checked)">
+      <span>${label}</span>
     </label>`;
   }
   document.getElementById('col-list').innerHTML = html;
