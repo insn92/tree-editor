@@ -137,33 +137,6 @@ function cloneSubtree(srcTree, dstTree, srcId, newId, newParentId) {
   }
 }
 
-function cloneSubtreeWithId(srcTree, dstTree, srcId, newId, newParentId) {
-  const src = trees[srcTree].nodes.get(srcId);
-  if (!src) return;
-  const dstParent = newParentId !== null ? trees[dstTree].nodes.get(newParentId) : null;
-  const dstLevel = dstParent ? dstParent.level + 1 : 0;
-  const dstId = nextId[dstTree]++;
-  const newNode = {
-    id: dstId, name: src.name, level: dstLevel, parentId: newParentId,
-    nomenclature: src.nomenclature,
-    codeCfh: src.codeCfh,
-    revision: src.revision,
-    quantity: src.quantity,
-    note: src.note,
-    routeStatus: src.routeStatus,
-    routeCode: src.routeCode,
-    routeName: src.routeName,
-    attrs: { ...src.attrs },
-    _added: true, _modified: false
-  };
-  trees[dstTree].nodes.set(dstId, newNode);
-  const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
-  for (const ch of children) {
-    cloneSubtreeWithId(srcTree, dstTree, ch.id, dstId, dstId);
-  }
-  return dstId;
-}
-
 function replaceNode(srcTree, srcId, dstTree, dstId) {
   const src = trees[srcTree].nodes.get(srcId);
   const dst = trees[dstTree].nodes.get(dstId);
@@ -236,21 +209,6 @@ function cloneSubtreeWithCalculatedId(srcTree, dstTree, srcId, newParentId, base
   for (const ch of children) {
     cloneSubtreeWithCalculatedId(srcTree, dstTree, ch.id, dstId, baseId);
   }
-}
-      siblingIdx++;
-    }
-    newNodes.set(id, node);
-  }
-  
-  // If we didn't insert yet (node was last), insert at end
-  if (!inserted) {
-    newNodes.set(newId, newNode);
-  }
-  
-  trees[dstTree].nodes = newNodes;
-  
-  // Select the new node
-  trees[dstTree].selected = newId;
 }
 
 function rebuildLevels(treeIdx, nodeId, baseLevel) {
