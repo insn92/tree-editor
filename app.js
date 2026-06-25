@@ -137,6 +137,48 @@ function cloneSubtree(srcTree, dstTree, srcId, newId, newParentId) {
   }
 }
 
+function replaceNode(srcTree, srcId, dstTree, dstId) {
+  const src = trees[srcTree].nodes.get(srcId);
+  const dst = trees[dstTree].nodes.get(dstId);
+  if (!src || !dst) return;
+  
+  const oldParentId = dst.parentId;
+  const oldLevel = dst.level;
+  
+  // Delete old node and its children
+  deleteNode(dstTree, dstId);
+  
+  // Clone source to destination with same parent and level
+  const dstParent = oldParentId !== null ? trees[dstTree].nodes.get(oldParentId) : null;
+  const newDstId = nextId[dstTree]++;
+  const newNode = {
+    id: newDstId, name: src.name, level: oldLevel, parentId: oldParentId,
+    nomenclature: src.nomenclature,
+    codeCfh: src.codeCfh,
+    revision: src.revision,
+    quantity: src.quantity,
+    note: src.note,
+    routeStatus: src.routeStatus,
+    routeCode: src.routeCode,
+    routeName: src.routeName,
+    attrs: { ...src.attrs },
+    _added: true, _modified: false
+  };
+  trees[dstTree].nodes.set(newDstId, newNode);
+  
+  // Clone children
+  const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
+  for (const ch of children) {
+    cloneSubtree(srcTree, dstTree, ch.id, newDstId, newDstId);
+  }
+  
+  // Rebuild levels for the new subtree
+  rebuildLevels(dstTree, newDstId, oldLevel);
+  
+  // Select the new node
+  trees[dstTree].selected = newDstId;
+}
+
 function rebuildLevels(treeIdx, nodeId, baseLevel) {
   const tree = trees[treeIdx];
   const node = tree.nodes.get(nodeId);
@@ -578,6 +620,9 @@ function showCtx(e, treeIdx, nodeId) {
 
   const pasteItem = menu.querySelector('[data-action="paste"]');
   pasteItem.style.display = clipboard ? '' : 'none';
+  
+  const replaceItem = menu.querySelector('[data-action="replace"]');
+  replaceItem.style.display = clipboard ? '' : 'none';
 }
 
 document.addEventListener('click', () => {
@@ -635,6 +680,13 @@ function handleCtxAction(action) {
         cloneSubtree(clipboard.treeIdx, treeIdx, clipboard.nodeId, 0, nodeId);
         trees[treeIdx].expanded.add(nodeId);
       }
+      clipboard = null;
+      updateClipboardIndicator();
+      renderAll();
+      break;
+    case 'replace':
+      if (!clipboard) break;
+      replaceNode(clipboard.treeIdx, clipboard.nodeId, treeIdx, nodeId);
       clipboard = null;
       updateClipboardIndicator();
       renderAll();
