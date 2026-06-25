@@ -859,7 +859,7 @@ function loadXlsxData(treeIdx, data) {
       if (row[a] !== undefined && row[a] !== null && row[a] !== '') attrs[a] = row[a];
     }
 
-    const node = makeNode(treeIdx, String(name), level, parentId, { revision, codeCfh, quantity, attrs });
+    const node = makeNode(treeIdx, String(name), level, parentId, { revision, codeCfh, quantity, attrs, _demo: true });
     parentStack.push({ id: node.id, level });
   }
 
