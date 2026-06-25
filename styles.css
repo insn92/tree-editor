@@ -54,7 +54,7 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var
 .th-attr{min-width:80px;width:100px;flex-shrink:0}
 
 .tree-viewport{position:relative}
-.tree-row{display:flex;position:absolute;left:0;right:0;height:var(--row-h);align-items:center;cursor:pointer;border-bottom:1px solid rgba(42,42,74,0.3);transition:background .1s}
+.tree-row{display:flex;position:absolute;left:0;height:var(--row-h);align-items:center;cursor:pointer;border-bottom:1px solid rgba(42,42,74,0.3);transition:background .1s}
 .tree-row:hover{background:var(--hover)}
 .tree-row.drag-over{background:rgba(79,195,247,0.3);border-bottom:2px solid var(--accent)}
 .tree-row .cell{padding:0 6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;height:100%;display:flex;align-items:center}

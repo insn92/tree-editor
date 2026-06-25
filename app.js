@@ -245,6 +245,14 @@ function renderTree(treeIdx) {
   const totalH = tree.flat.length * ROW_H;
   viewport.style.height = totalH + 'px';
 
+  // Calculate total width of all columns for horizontal scroll
+  let totalW = 0;
+  const keys = Object.keys(colWidths[treeIdx]);
+  for (const k of keys) totalW += colWidths[treeIdx][k];
+  const visibleAttrList = globalAttrs.filter(a => visibleAttrs.has(a));
+  for (const a of visibleAttrList) totalW += (colWidths[treeIdx]['attr-' + a] || 100);
+  viewport.style.width = totalW + 'px';
+
   const scrollTop = container.scrollTop;
   const viewH = container.clientHeight;
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_H) - 5);
@@ -493,6 +501,13 @@ function renderHeaders(treeIdx) {
     html += `<div class="th th-attr" title="${escapeHtml(a)}">${escapeHtml(a)}<div class="resize-handle" data-col="attr-${a}"></div></div>`;
   }
   hdr.innerHTML = html;
+
+  // Set header width to match viewport
+  let totalW = 0;
+  const keys = Object.keys(colWidths[treeIdx]);
+  for (const k of keys) totalW += colWidths[treeIdx][k];
+  for (const a of visibleAttrList) totalW += (colWidths[treeIdx]['attr-' + a] || 100);
+  hdr.style.width = totalW + 'px';
 
   hdr.querySelectorAll('.resize-handle').forEach(handle => {
     handle.addEventListener('mousedown', onColResizeStart);
