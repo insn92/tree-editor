@@ -34,6 +34,7 @@ function makeNode(treeIdx, name, level, parentId, data) {
   const d = data || {};
   const node = {
     id, name, level, parentId,
+    nomenclature: d.nomenclature || '',
     revision: d.revision || '',
     codeCfh: d.codeCfh || '',
     quantity: d.quantity || '',
@@ -137,15 +138,17 @@ function rebuildNomenclature(treeIdx) {
   function assign(nodeId, parentCode) {
     const node = tree.nodes.get(nodeId);
     if (!node) return;
-    if (parentCode === null) {
-      const seq = (counters['ROOT'] || 0) + 1;
-      counters['ROOT'] = seq;
-      node.nomenclature = 'СБ-' + String(seq).padStart(3, '0');
-    } else {
-      const key = parentCode;
-      const seq = (counters[key] || 0) + 1;
-      counters[key] = seq;
-      node.nomenclature = parentCode + '-' + String(seq).padStart(2, '0');
+    if (!node._nomenclatureFromImport) {
+      if (parentCode === null) {
+        const seq = (counters['ROOT'] || 0) + 1;
+        counters['ROOT'] = seq;
+        node.nomenclature = 'СБ-' + String(seq).padStart(3, '0');
+      } else {
+        const key = parentCode;
+        const seq = (counters[key] || 0) + 1;
+        counters[key] = seq;
+        node.nomenclature = parentCode + '-' + String(seq).padStart(2, '0');
+      }
     }
     const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
     children.sort((a, b) => a.id - b.id);
@@ -845,6 +848,7 @@ function loadXlsxData(treeIdx, data) {
   for (const row of data) {
     const level = parseInt(row['Уровень']) || 0;
     const name = row['Наименование'] || 'Без названия';
+    const nomenclature = row['Номенклатура'] || '';
     const revision = row['Ревизия'] || '';
     const codeCfh = row['Код ЦФХ'] || '';
     const quantity = row['Кол-во'] || '';
@@ -860,6 +864,10 @@ function loadXlsxData(treeIdx, data) {
     }
 
     const node = makeNode(treeIdx, String(name), level, parentId, { revision, codeCfh, quantity, attrs, _demo: true });
+    if (nomenclature) {
+      node.nomenclature = nomenclature;
+      node._nomenclatureFromImport = true;
+    }
     parentStack.push({ id: node.id, level });
   }
 
