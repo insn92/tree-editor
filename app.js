@@ -137,22 +137,14 @@ function cloneSubtree(srcTree, dstTree, srcId, newId, newParentId) {
   }
 }
 
-function replaceNode(srcTree, srcId, dstTree, dstId) {
+function cloneSubtreeWithId(srcTree, dstTree, srcId, newId, newParentId) {
   const src = trees[srcTree].nodes.get(srcId);
-  const dst = trees[dstTree].nodes.get(dstId);
-  if (!src || !dst) return;
-  
-  const oldParentId = dst.parentId;
-  const oldLevel = dst.level;
-  
-  // Delete old node and its children
-  deleteNode(dstTree, dstId);
-  
-  // Clone source to destination with same parent and level
-  const dstParent = oldParentId !== null ? trees[dstTree].nodes.get(oldParentId) : null;
-  const newDstId = nextId[dstTree]++;
+  if (!src) return;
+  const dstParent = newParentId !== null ? trees[dstTree].nodes.get(newParentId) : null;
+  const dstLevel = dstParent ? dstParent.level + 1 : 0;
+  const dstId = nextId[dstTree]++;
   const newNode = {
-    id: newDstId, name: src.name, level: oldLevel, parentId: oldParentId,
+    id: dstId, name: src.name, level: dstLevel, parentId: newParentId,
     nomenclature: src.nomenclature,
     codeCfh: src.codeCfh,
     revision: src.revision,
@@ -164,19 +156,101 @@ function replaceNode(srcTree, srcId, dstTree, dstId) {
     attrs: { ...src.attrs },
     _added: true, _modified: false
   };
-  trees[dstTree].nodes.set(newDstId, newNode);
-  
-  // Clone children
+  trees[dstTree].nodes.set(dstId, newNode);
   const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
   for (const ch of children) {
-    cloneSubtree(srcTree, dstTree, ch.id, newDstId, newDstId);
+    cloneSubtreeWithId(srcTree, dstTree, ch.id, dstId, dstId);
+  }
+  return dstId;
+}
+
+function replaceNode(srcTree, srcId, dstTree, dstId) {
+  const src = trees[srcTree].nodes.get(srcId);
+  const dst = trees[dstTree].nodes.get(dstId);
+  if (!src || !dst) return;
+  
+  const oldParentId = dst.parentId;
+  
+  // Find position among siblings before deleting
+  const siblings = [...trees[dstTree].nodes.values()].filter(n => n.parentId === oldParentId);
+  const oldIndex = siblings.findIndex(n => n.id === dstId);
+  const prevSiblingId = oldIndex > 0 ? siblings[oldIndex - 1].id : 0;
+  const nextSiblingId = oldIndex < siblings.length - 1 ? siblings[oldIndex + 1].id : prevSiblingId + 1000;
+  
+  // Delete old node and its children
+  deleteNode(dstTree, dstId);
+  
+  // Calculate a fractional id between siblings for correct ordering
+  const midId = prevSiblingId + (nextSiblingId - prevSiblingId) / 2;
+  
+  // Manually clone with calculated id
+  const newNode = {
+    id: midId, name: src.name, level: dst.level, parentId: oldParentId,
+    nomenclature: src.nomenclature,
+    codeCfh: src.codeCfh,
+    revision: src.revision,
+    quantity: src.quantity,
+    note: src.note,
+    routeStatus: src.routeStatus,
+    routeCode: src.routeCode,
+    routeName: src.routeName,
+    attrs: { ...src.attrs },
+    _added: true, _modified: false
+  };
+  trees[dstTree].nodes.set(midId, newNode);
+  
+  // Clone children with proper ids
+  const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
+  for (const ch of children) {
+    cloneSubtreeWithCalculatedId(srcTree, dstTree, ch.id, midId, midId);
   }
   
   // Rebuild levels for the new subtree
-  rebuildLevels(dstTree, newDstId, oldLevel);
+  rebuildLevels(dstTree, midId, dst.level);
   
   // Select the new node
-  trees[dstTree].selected = newDstId;
+  trees[dstTree].selected = midId;
+}
+
+function cloneSubtreeWithCalculatedId(srcTree, dstTree, srcId, newParentId, baseId) {
+  const src = trees[srcTree].nodes.get(srcId);
+  if (!src) return;
+  const dstParent = trees[dstTree].nodes.get(newParentId);
+  const dstLevel = dstParent ? dstParent.level + 1 : 0;
+  const dstId = nextId[dstTree]++;
+  const newNode = {
+    id: dstId, name: src.name, level: dstLevel, parentId: newParentId,
+    nomenclature: src.nomenclature,
+    codeCfh: src.codeCfh,
+    revision: src.revision,
+    quantity: src.quantity,
+    note: src.note,
+    routeStatus: src.routeStatus,
+    routeCode: src.routeCode,
+    routeName: src.routeName,
+    attrs: { ...src.attrs },
+    _added: true, _modified: false
+  };
+  trees[dstTree].nodes.set(dstId, newNode);
+  const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
+  for (const ch of children) {
+    cloneSubtreeWithCalculatedId(srcTree, dstTree, ch.id, dstId, baseId);
+  }
+}
+      siblingIdx++;
+    }
+    newNodes.set(id, node);
+  }
+  
+  // If we didn't insert yet (node was last), insert at end
+  if (!inserted) {
+    newNodes.set(newId, newNode);
+  }
+  
+  trees[dstTree].nodes = newNodes;
+  
+  // Select the new node
+  trees[dstTree].selected = newId;
 }
 
 function rebuildLevels(treeIdx, nodeId, baseLevel) {
