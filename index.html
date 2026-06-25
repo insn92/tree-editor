@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Редактор деревьев</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <div class="toolbar">
+    <button onclick="addRootNode(0)">+ Корень</button>
+    <button onclick="addRootNode(1)">+ Корень (Дерево 2)</button>
+    <div class="sep"></div>
+    <button onclick="expandAll(0)">Развернуть все (1)</button>
+    <button onclick="expandAll(1)">Развернуть все (2)</button>
+    <button onclick="collapseAll(0)">Свернуть все (1)</button>
+    <button onclick="collapseAll(1)">Свернуть все (2)</button>
+    <div class="sep"></div>
+    <button onclick="importXlsx(0)">Импорт xlsx (1)</button>
+    <button onclick="importXlsx(1)">Импорт xlsx (2)</button>
+    <div class="sep"></div>
+    <button onclick="exportXlsx(0)">Экспорт xlsx (1)</button>
+    <button onclick="exportXlsx(1)">Экспорт xlsx (2)</button>
+    <div class="sep"></div>
+    <button onclick="showAttrManager()">Атрибуты</button>
+    <button onclick="clearAll(0)">Очистить (1)</button>
+    <button onclick="clearAll(1)">Очистить (2)</button>
+    <div class="sep"></div>
+    <span id="clipboard-indicator" style="font-size:11px;color:var(--fg2);display:none">📋 В буфере: <span id="clipboard-name"></span> <button onclick="clipboard=null;updateClipboardIndicator()" style="padding:1px 6px;font-size:10px;margin-left:4px">✕</button></span>
+  </div>
+
+  <div class="panels" id="panels">
+    <div class="panel" id="panel-0">
+      <div class="panel-header">
+        <span style="font-size:12px;font-weight:600;color:var(--accent)">Дерево 1</span>
+        <input type="text" id="search-0" placeholder="Поиск..." oninput="onSearch(0)">
+      </div>
+      <div class="attr-filter" id="attr-filter-0"></div>
+      <div class="tree-container" id="tc-0" onscroll="onScroll(0)">
+        <div class="tree-header" id="tree-header-0"></div>
+        <div class="tree-viewport" id="tv-0"></div>
+      </div>
+      <div class="status-bar" id="status-0">0 узлов</div>
+    </div>
+    <div class="split-handle" id="split-handle"></div>
+    <div class="panel" id="panel-1">
+      <div class="panel-header">
+        <span style="font-size:12px;font-weight:600;color:var(--accent)">Дерево 2</span>
+        <input type="text" id="search-1" placeholder="Поиск..." oninput="onSearch(1)">
+      </div>
+      <div class="attr-filter" id="attr-filter-1"></div>
+      <div class="tree-container" id="tc-1" onscroll="onScroll(1)">
+        <div class="tree-header" id="tree-header-1"></div>
+        <div class="tree-viewport" id="tv-1"></div>
+      </div>
+      <div class="status-bar" id="status-1">0 узлов</div>
+    </div>
+  </div>
+</div>
+
+<div class="context-menu" id="ctx-menu">
+  <div class="cm-item" data-action="add-child">Добавить дочерний</div>
+  <div class="cm-item" data-action="add-sibling">Добавить соседний</div>
+  <div class="cm-item" data-action="edit">Редактировать</div>
+  <div class="cm-sep"></div>
+  <div class="cm-item" data-action="cut">Вырезать</div>
+  <div class="cm-item" data-action="copy">Копировать</div>
+  <div class="cm-item" data-action="paste">Вставить</div>
+  <div class="cm-sep"></div>
+  <div class="cm-item" data-action="expand-children">Развернуть поддерево</div>
+  <div class="cm-item" data-action="collapse-children">Свернуть поддерево</div>
+  <div class="cm-sep"></div>
+  <div class="cm-item danger" data-action="delete">Удалить</div>
+</div>
+
+<div class="modal-overlay" id="node-modal">
+  <div class="modal">
+    <h3 id="modal-title">Редактирование узла</h3>
+    <div id="modal-fields"></div>
+    <div class="btn-row">
+      <button onclick="closeModal()">Отмена</button>
+      <button class="primary" onclick="saveModal()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="attr-modal">
+  <div class="modal">
+    <h3>Управление атрибутами</h3>
+    <div id="attr-list"></div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <input type="text" id="new-attr-name" placeholder="Новый атрибут" style="flex:1">
+      <button class="primary" onclick="addAttr()">Добавить</button>
+    </div>
+    <div class="btn-row" style="margin-top:14px">
+      <button onclick="closeAttrModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
+
+<script src="app.js"></script>
+</body>
+</html>
