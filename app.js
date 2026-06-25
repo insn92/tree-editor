@@ -471,11 +471,24 @@ function onColResizeStart(e) {
   const treeIdx = panel.id === 'panel-0' ? 0 : 1;
   const startX = e.clientX;
   const startW = e.target.parentElement.offsetWidth;
+  const thCell = e.target.parentElement;
   function onMove(ev) {
     const newW = Math.max(30, startW + (ev.clientX - startX));
-    e.target.parentElement.style.width = newW + 'px';
+    thCell.style.width = newW + 'px';
     colWidths[treeIdx][colKey] = newW;
-    panel.querySelectorAll('.cell-' + colKey).forEach(el => el.style.width = newW + 'px');
+    const cells = panel.querySelectorAll('.cell-' + colKey);
+    cells.forEach(el => el.style.width = newW + 'px');
+    // Update header total width
+    const hdr = document.getElementById(`tree-header-${treeIdx}`);
+    let totalW = 0;
+    const keys = Object.keys(colWidths[treeIdx]);
+    for (const k of keys) totalW += colWidths[treeIdx][k];
+    const visibleAttrList = globalAttrs.filter(a => visibleAttrs.has(a));
+    for (const a of visibleAttrList) totalW += (colWidths[treeIdx]['attr-' + a] || 100);
+    hdr.style.width = totalW + 'px';
+    // Update viewport total width
+    const viewport = document.getElementById(`tv-${treeIdx}`);
+    viewport.style.width = totalW + 'px';
   }
   function onUp() {
     document.removeEventListener('mousemove', onMove);
