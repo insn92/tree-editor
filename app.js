@@ -260,7 +260,6 @@ function renderTree(treeIdx) {
 
   const searchQuery = tree.searchQuery.toLowerCase().trim();
   const headerH = document.getElementById(`tree-header-${treeIdx}`).offsetHeight;
-  const visibleAttrList = globalAttrs.filter(a => visibleAttrs.has(a));
 
   let html = '';
   for (let i = startIdx; i < endIdx; i++) {
