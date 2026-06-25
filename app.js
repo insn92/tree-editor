@@ -20,11 +20,15 @@ const COL_DEFS = [
   { key: 'expand', css: 'cell-expand', thCss: 'th-expand', w: 30 },
   { key: 'level', css: 'cell-level', thCss: 'th-level', w: 40 },
   { key: 'nom', css: 'cell-nom', thCss: 'th-nom', w: 120 },
-  { key: 'rev', css: 'cell-rev', thCss: 'th-rev', w: 50 },
   { key: 'cfh', css: 'cell-cfh', thCss: 'th-cfh', w: 90 },
+  { key: 'rev', css: 'cell-rev', thCss: 'th-rev', w: 50 },
   { key: 'name', css: 'cell-name', thCss: 'th-name', w: 200 },
   { key: 'qty', css: 'cell-qty', thCss: 'th-qty', w: 55 },
-  { key: 'na', css: 'cell-na', thCss: 'th-na', w: 40 }
+  { key: 'na', css: 'cell-na', thCss: 'th-na', w: 40 },
+  { key: 'note', css: 'cell-note', thCss: 'th-note', w: 120 },
+  { key: 'routeStatus', css: 'cell-route-status', thCss: 'th-route-status', w: 80 },
+  { key: 'routeCode', css: 'cell-route-code', thCss: 'th-route-code', w: 80 },
+  { key: 'routeName', css: 'cell-route-name', thCss: 'th-route-name', w: 150 }
 ];
 let colWidths = [{}, {}];
 COL_DEFS.forEach(c => { colWidths[0][c.key] = c.w; colWidths[1][c.key] = c.w; });
@@ -35,9 +39,13 @@ function makeNode(treeIdx, name, level, parentId, data) {
   const node = {
     id, name, level, parentId,
     nomenclature: d.nomenclature || '',
-    revision: d.revision || '',
     codeCfh: d.codeCfh || '',
+    revision: d.revision || '',
     quantity: d.quantity || '',
+    note: d.note || '',
+    routeStatus: d.routeStatus || '',
+    routeCode: d.routeCode || '',
+    routeName: d.routeName || '',
     attrs: d.attrs || {},
     _added: d._demo ? false : true,
     _modified: false
@@ -131,36 +139,6 @@ function rebuildLevels(treeIdx, nodeId, baseLevel) {
   for (const ch of children) rebuildLevels(treeIdx, ch.id, baseLevel + 1);
 }
 
-function rebuildNomenclature(treeIdx) {
-  const tree = trees[treeIdx];
-  tree.roots.sort((a, b) => a - b);
-  const counters = {};
-  function assign(nodeId, parentCode) {
-    const node = tree.nodes.get(nodeId);
-    if (!node) return;
-    if (!node._nomenclatureFromImport) {
-      if (parentCode === null) {
-        const seq = (counters['ROOT'] || 0) + 1;
-        counters['ROOT'] = seq;
-        node.nomenclature = 'СБ-' + String(seq).padStart(3, '0');
-      } else {
-        const key = parentCode;
-        const seq = (counters[key] || 0) + 1;
-        counters[key] = seq;
-        node.nomenclature = parentCode + '-' + String(seq).padStart(2, '0');
-      }
-    }
-    const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
-    children.sort((a, b) => a.id - b.id);
-    for (const ch of children) {
-      assign(ch.id, node.nomenclature);
-    }
-  }
-  for (const rootId of tree.roots) {
-    assign(rootId, null);
-  }
-}
-
 function buildFlat(treeIdx) {
   const tree = trees[treeIdx];
   const flat = [];
@@ -211,7 +189,6 @@ function buildFlat(treeIdx) {
 }
 
 function renderTree(treeIdx) {
-  rebuildNomenclature(treeIdx);
   buildFlat(treeIdx);
   const tree = trees[treeIdx];
   const container = document.getElementById(`tc-${treeIdx}`);
@@ -252,11 +229,15 @@ function renderTree(treeIdx) {
     cells += `<div class="cell cell-expand" style="width:${colWidths[treeIdx].expand}px" onclick="event.stopPropagation();toggleExpand(${treeIdx},${item.nodeId})">${expandIcon}</div>`;
     cells += `<div class="cell cell-level" style="width:${colWidths[treeIdx].level}px">${node.level}</div>`;
     cells += `<div class="cell cell-nom" style="width:${colWidths[treeIdx].nom}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'nomenclature')"><span class="node-indent" style="width:${indent}px"></span>${escapeHtml(node.nomenclature || '')}</div>`;
-    cells += `<div class="cell cell-rev" style="width:${colWidths[treeIdx].rev}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'revision')">${escapeHtml(node.revision || '')}</div>`;
     cells += `<div class="cell cell-cfh" style="width:${colWidths[treeIdx].cfh}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'codeCfh')">${escapeHtml(node.codeCfh || '')}</div>`;
+    cells += `<div class="cell cell-rev" style="width:${colWidths[treeIdx].rev}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'revision')">${escapeHtml(node.revision || '')}</div>`;
     cells += `<div class="cell cell-name" style="width:${colWidths[treeIdx].name}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'name')"><span class="node-indent" style="width:${indent}px"></span><span class="cell-name-text" title="${escapeHtml(node.name)}">${nameHtml}</span></div>`;
     cells += `<div class="cell cell-qty" style="width:${colWidths[treeIdx].qty}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'quantity')">${escapeHtml(String(node.quantity || ''))}</div>`;
     cells += `<div class="cell cell-na" style="width:${colWidths[treeIdx].na}px"></div>`;
+    cells += `<div class="cell cell-note" style="width:${colWidths[treeIdx].note}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'note')">${escapeHtml(node.note || '')}</div>`;
+    cells += `<div class="cell cell-route-status" style="width:${colWidths[treeIdx].routeStatus}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeStatus')">${escapeHtml(node.routeStatus || '')}</div>`;
+    cells += `<div class="cell cell-route-code" style="width:${colWidths[treeIdx].routeCode}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeCode')">${escapeHtml(node.routeCode || '')}</div>`;
+    cells += `<div class="cell cell-route-name" style="width:${colWidths[treeIdx].routeName}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeName')">${escapeHtml(node.routeName || '')}</div>`;
     for (const a of visibleAttrList) {
       const v = node.attrs[a] || '';
       let vHtml = escapeHtml(String(v));
@@ -306,9 +287,13 @@ function startInlineEdit(e, treeIdx, nodeId, field, attrName) {
   let val = '';
   if (field === 'name') val = node.name;
   else if (field === 'nomenclature') val = node.nomenclature || '';
-  else if (field === 'revision') val = node.revision || '';
   else if (field === 'codeCfh') val = node.codeCfh || '';
+  else if (field === 'revision') val = node.revision || '';
   else if (field === 'quantity') val = String(node.quantity || '');
+  else if (field === 'note') val = node.note || '';
+  else if (field === 'routeStatus') val = node.routeStatus || '';
+  else if (field === 'routeCode') val = node.routeCode || '';
+  else if (field === 'routeName') val = node.routeName || '';
   else val = node.attrs[attrName] || '';
   cell.classList.add('cell-editing');
   const inp = document.createElement('input');
@@ -337,9 +322,13 @@ function commitInlineEdit() {
   const newVal = inp.value;
   if (field === 'name') node.name = newVal;
   else if (field === 'nomenclature') node.nomenclature = newVal;
-  else if (field === 'revision') node.revision = newVal;
   else if (field === 'codeCfh') node.codeCfh = newVal;
+  else if (field === 'revision') node.revision = newVal;
   else if (field === 'quantity') node.quantity = newVal;
+  else if (field === 'note') node.note = newVal;
+  else if (field === 'routeStatus') node.routeStatus = newVal;
+  else if (field === 'routeCode') node.routeCode = newVal;
+  else if (field === 'routeName') node.routeName = newVal;
   else node.attrs[attrName] = newVal;
   node._added = false;
   node._modified = true;
@@ -450,7 +439,7 @@ function renderHeaders(treeIdx) {
   function rh(key, label) {
     return `<div class="th ${key}" style="width:${colWidths[treeIdx][key]}px">${label}<div class="resize-handle" data-col="${key}"></div></div>`;
   }
-  let html = rh('expand', '') + rh('level', 'Ур.') + rh('nom', 'Номенклатура') + rh('rev', 'Рев.') + rh('cfh', 'Код ЦФХ') + rh('name', 'Наименование') + rh('qty', 'Кол-во') + rh('na', 'n/a');
+  let html = rh('expand', '') + rh('level', 'Ур.') + rh('nom', 'Номенклатура') + rh('cfh', 'Код ЦФХ') + rh('rev', 'Рев.') + rh('name', 'Наименование') + rh('qty', 'Кол-во') + rh('na', 'n/a') + rh('note', 'Примечание') + rh('routeStatus', 'Маршрут.Статус') + rh('routeCode', 'Маршрут.Код') + rh('routeName', 'Маршрут.Полное наименование');
   for (const a of visibleAttrList) {
     html += `<div class="th th-attr" title="${escapeHtml(a)}">${escapeHtml(a)}<div class="resize-handle" data-col="attr-${a}"></div></div>`;
   }
@@ -675,10 +664,14 @@ function openEditModal(treeIdx, nodeId) {
 
   let html = '';
   html += `<label>Номенклатура</label><input type="text" id="m-nom" value="${escapeHtml(node.nomenclature || '')}">`;
-  html += `<label>Наименование</label><input type="text" id="m-name" value="${escapeHtml(node.name)}">`;
-  html += `<label>Ревизия</label><input type="text" id="m-revision" value="${escapeHtml(node.revision || '')}">`;
   html += `<label>Код ЦФХ</label><input type="text" id="m-codeCfh" value="${escapeHtml(node.codeCfh || '')}">`;
+  html += `<label>Ревизия</label><input type="text" id="m-revision" value="${escapeHtml(node.revision || '')}">`;
+  html += `<label>Наименование</label><input type="text" id="m-name" value="${escapeHtml(node.name)}">`;
   html += `<label>Количество</label><input type="text" id="m-quantity" value="${escapeHtml(String(node.quantity || ''))}">`;
+  html += `<label>Примечание</label><input type="text" id="m-note" value="${escapeHtml(node.note || '')}">`;
+  html += `<label>Маршрут.Статус</label><input type="text" id="m-routeStatus" value="${escapeHtml(node.routeStatus || '')}">`;
+  html += `<label>Маршрут.Код</label><input type="text" id="m-routeCode" value="${escapeHtml(node.routeCode || '')}">`;
+  html += `<label>Маршрут.Полное наименование</label><input type="text" id="m-routeName" value="${escapeHtml(node.routeName || '')}">`;
   for (const a of globalAttrs) {
     const v = node.attrs[a] || '';
     html += `<label>${escapeHtml(a)}</label><input type="text" id="m-attr-${a.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g,'_')}" value="${escapeHtml(String(v))}">`;
@@ -700,10 +693,14 @@ function saveModal() {
   if (!node) return;
 
   node.nomenclature = document.getElementById('m-nom').value;
-  node.name = document.getElementById('m-name').value || 'Без названия';
-  node.revision = document.getElementById('m-revision').value;
   node.codeCfh = document.getElementById('m-codeCfh').value;
+  node.revision = document.getElementById('m-revision').value;
+  node.name = document.getElementById('m-name').value || 'Без названия';
   node.quantity = document.getElementById('m-quantity').value;
+  node.note = document.getElementById('m-note').value;
+  node.routeStatus = document.getElementById('m-routeStatus').value;
+  node.routeCode = document.getElementById('m-routeCode').value;
+  node.routeName = document.getElementById('m-routeName').value;
   node._added = false;
   node._modified = true;
 
@@ -833,7 +830,7 @@ function loadXlsxData(treeIdx, data) {
   nextId[treeIdx] = 1;
 
   const cols = data.length > 0 ? Object.keys(data[0]) : [];
-  const fixedCols = ['Уровень', 'Номенклатура', 'Ревизия', 'Код ЦФХ', 'Наименование', 'Кол-во', 'n/a'];
+  const fixedCols = ['№ п/п', 'Уровень', 'Номенклатура', 'Код ЦФХ', 'Ревизия', 'Наименование', 'Кол-во', 'N/A', 'Примечание', 'Маршрут.Статус', 'Маршрут.Код', 'Маршрут.Полное наименование'];
   const attrCols = cols.filter(c => !fixedCols.includes(c));
 
   for (const a of attrCols) {
@@ -849,9 +846,13 @@ function loadXlsxData(treeIdx, data) {
     const level = parseInt(row['Уровень']) || 0;
     const name = row['Наименование'] || 'Без названия';
     const nomenclature = row['Номенклатура'] || '';
-    const revision = row['Ревизия'] || '';
     const codeCfh = row['Код ЦФХ'] || '';
+    const revision = row['Ревизия'] || '';
     const quantity = row['Кол-во'] || '';
+    const note = row['Примечание'] || '';
+    const routeStatus = row['Маршрут.Статус'] || '';
+    const routeCode = row['Маршрут.Код'] || '';
+    const routeName = row['Маршрут.Полное наименование'] || '';
 
     while (parentStack.length > 0 && parentStack[parentStack.length - 1].level >= level) {
       parentStack.pop();
@@ -863,11 +864,7 @@ function loadXlsxData(treeIdx, data) {
       if (row[a] !== undefined && row[a] !== null && row[a] !== '') attrs[a] = row[a];
     }
 
-    const node = makeNode(treeIdx, String(name), level, parentId, { revision, codeCfh, quantity, attrs, _demo: true });
-    if (nomenclature) {
-      node.nomenclature = nomenclature;
-      node._nomenclatureFromImport = true;
-    }
+    const node = makeNode(treeIdx, String(name), level, parentId, { nomenclature, codeCfh, revision, quantity, note, routeStatus, routeCode, routeName, attrs, _demo: true });
     parentStack.push({ id: node.id, level });
   }
 
@@ -889,11 +886,15 @@ function exportXlsx(treeIdx) {
     const row = {
       'Уровень': node.level,
       'Номенклатура': node.nomenclature || '',
-      'Ревизия': node.revision || '',
       'Код ЦФХ': node.codeCfh || '',
+      'Ревизия': node.revision || '',
       'Наименование': node.name,
       'Кол-во': node.quantity || '',
-      'n/a': ''
+      'N/A': '',
+      'Примечание': node.note || '',
+      'Маршрут.Статус': node.routeStatus || '',
+      'Маршрут.Код': node.routeCode || '',
+      'Маршрут.Полное наименование': node.routeName || ''
     };
     for (const a of globalAttrs) {
       row[a] = node.attrs[a] || '';
