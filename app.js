@@ -247,8 +247,9 @@ function renderTree(treeIdx) {
 
   // Calculate total width of all columns for horizontal scroll
   let totalW = 0;
-  const keys = Object.keys(colWidths[treeIdx]);
-  for (const k of keys) totalW += colWidths[treeIdx][k];
+  for (const k of Object.keys(colWidths[treeIdx])) {
+    if (visibleCols.has(k)) totalW += colWidths[treeIdx][k];
+  }
   const visibleAttrList = globalAttrs.filter(a => visibleAttrs.has(a));
   for (const a of visibleAttrList) totalW += (colWidths[treeIdx]['attr-' + a] || 100);
   viewport.style.width = totalW + 'px';
@@ -282,18 +283,18 @@ function renderTree(treeIdx) {
     }
 
     let cells = '';
-    cells += `<div class="cell cell-expand" style="width:${colWidths[treeIdx].expand}px" onclick="event.stopPropagation();toggleExpand(${treeIdx},${item.nodeId})">${expandIcon}</div>`;
-    cells += `<div class="cell cell-level" style="width:${colWidths[treeIdx].level}px">${node.level}</div>`;
-    cells += `<div class="cell cell-nom" style="width:${colWidths[treeIdx].nom}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'nomenclature')"><span class="node-indent" style="width:${indent}px"></span>${escapeHtml(node.nomenclature || '')}</div>`;
-    cells += `<div class="cell cell-cfh" style="width:${colWidths[treeIdx].cfh}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'codeCfh')">${escapeHtml(node.codeCfh || '')}</div>`;
-    cells += `<div class="cell cell-rev" style="width:${colWidths[treeIdx].rev}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'revision')">${escapeHtml(node.revision || '')}</div>`;
-    cells += `<div class="cell cell-name" style="width:${colWidths[treeIdx].name}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'name')"><span class="node-indent" style="width:${indent}px"></span><span class="cell-name-text" title="${escapeHtml(node.name)}">${nameHtml}</span></div>`;
-    cells += `<div class="cell cell-qty" style="width:${colWidths[treeIdx].qty}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'quantity')">${escapeHtml(String(node.quantity || ''))}</div>`;
-    cells += `<div class="cell cell-na" style="width:${colWidths[treeIdx].na}px"></div>`;
-    cells += `<div class="cell cell-note" style="width:${colWidths[treeIdx].note}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'note')">${escapeHtml(node.note || '')}</div>`;
-    cells += `<div class="cell cell-route-status" style="width:${colWidths[treeIdx].routeStatus}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeStatus')">${escapeHtml(node.routeStatus || '')}</div>`;
-    cells += `<div class="cell cell-route-code" style="width:${colWidths[treeIdx].routeCode}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeCode')">${escapeHtml(node.routeCode || '')}</div>`;
-    cells += `<div class="cell cell-route-name" style="width:${colWidths[treeIdx].routeName}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeName')">${escapeHtml(node.routeName || '')}</div>`;
+    if (visibleCols.has('expand')) cells += `<div class="cell cell-expand" style="width:${colWidths[treeIdx].expand}px" onclick="event.stopPropagation();toggleExpand(${treeIdx},${item.nodeId})">${expandIcon}</div>`;
+    if (visibleCols.has('level')) cells += `<div class="cell cell-level" style="width:${colWidths[treeIdx].level}px">${node.level}</div>`;
+    if (visibleCols.has('nom')) cells += `<div class="cell cell-nom" style="width:${colWidths[treeIdx].nom}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'nomenclature')"><span class="node-indent" style="width:${indent}px"></span>${escapeHtml(node.nomenclature || '')}</div>`;
+    if (visibleCols.has('cfh')) cells += `<div class="cell cell-cfh" style="width:${colWidths[treeIdx].cfh}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'codeCfh')">${escapeHtml(node.codeCfh || '')}</div>`;
+    if (visibleCols.has('rev')) cells += `<div class="cell cell-rev" style="width:${colWidths[treeIdx].rev}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'revision')">${escapeHtml(node.revision || '')}</div>`;
+    if (visibleCols.has('name')) cells += `<div class="cell cell-name" style="width:${colWidths[treeIdx].name}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'name')"><span class="node-indent" style="width:${indent}px"></span><span class="cell-name-text" title="${escapeHtml(node.name)}">${nameHtml}</span></div>`;
+    if (visibleCols.has('qty')) cells += `<div class="cell cell-qty" style="width:${colWidths[treeIdx].qty}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'quantity')">${escapeHtml(String(node.quantity || ''))}</div>`;
+    if (visibleCols.has('na')) cells += `<div class="cell cell-na" style="width:${colWidths[treeIdx].na}px"></div>`;
+    if (visibleCols.has('note')) cells += `<div class="cell cell-note" style="width:${colWidths[treeIdx].note}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'note')">${escapeHtml(node.note || '')}</div>`;
+    if (visibleCols.has('routeStatus')) cells += `<div class="cell cell-route-status" style="width:${colWidths[treeIdx].routeStatus}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeStatus')">${escapeHtml(node.routeStatus || '')}</div>`;
+    if (visibleCols.has('routeCode')) cells += `<div class="cell cell-route-code" style="width:${colWidths[treeIdx].routeCode}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeCode')">${escapeHtml(node.routeCode || '')}</div>`;
+    if (visibleCols.has('routeName')) cells += `<div class="cell cell-route-name" style="width:${colWidths[treeIdx].routeName}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeName')">${escapeHtml(node.routeName || '')}</div>`;
     for (const a of visibleAttrList) {
       const v = node.attrs[a] || '';
       let vHtml = escapeHtml(String(v));
@@ -506,6 +507,7 @@ function renderHeaders(treeIdx) {
   const visibleAttrList = globalAttrs.filter(a => visibleAttrs.has(a));
   const hdr = document.getElementById(`tree-header-${treeIdx}`);
   function rh(key, label) {
+    if (!visibleCols.has(key)) return '';
     return `<div class="th ${key}" style="width:${colWidths[treeIdx][key]}px">${label}<div class="resize-handle" data-col="${key}"></div></div>`;
   }
   let html = rh('expand', '') + rh('level', 'Ур.') + rh('nom', 'Номенклатура') + rh('cfh', 'Код ЦФХ') + rh('rev', 'Рев.') + rh('name', 'Наименование') + rh('qty', 'Кол-во') + rh('na', 'n/a') + rh('note', 'Примечание') + rh('routeStatus', 'Маршрут.Статус') + rh('routeCode', 'Маршрут.Код') + rh('routeName', 'Маршрут.Полное наименование');
@@ -516,8 +518,9 @@ function renderHeaders(treeIdx) {
 
   // Set header width to match viewport
   let totalW = 0;
-  const keys = Object.keys(colWidths[treeIdx]);
-  for (const k of keys) totalW += colWidths[treeIdx][k];
+  for (const k of Object.keys(colWidths[treeIdx])) {
+    if (visibleCols.has(k)) totalW += colWidths[treeIdx][k];
+  }
   for (const a of visibleAttrList) totalW += (colWidths[treeIdx]['attr-' + a] || 100);
   hdr.style.width = totalW + 'px';
 
@@ -874,6 +877,50 @@ function renderAttrManager() {
 
 function closeAttrModal() {
   document.getElementById('attr-modal').classList.remove('visible');
+}
+
+const COL_LABELS = {
+  expand: 'Разворот',
+  level: 'Уровень',
+  nom: 'Номенклатура',
+  cfh: 'Код ЦФХ',
+  rev: 'Ревизия',
+  name: 'Наименование',
+  qty: 'Кол-во',
+  na: 'n/a',
+  note: 'Примечание',
+  routeStatus: 'Маршрут.Статус',
+  routeCode: 'Маршрут.Код',
+  routeName: 'Маршрут.Полное наименование'
+};
+
+let visibleCols = new Set(Object.keys(COL_LABELS));
+
+function showColManager() {
+  renderColManager();
+  document.getElementById('col-modal').classList.add('visible');
+}
+
+function renderColManager() {
+  let html = '';
+  for (const [key, label] of Object.entries(COL_LABELS)) {
+    const checked = visibleCols.has(key) ? 'checked' : '';
+    html += `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" ${checked} onchange="toggleCol('${key}',this.checked)" style="accent-color:var(--accent)">
+      <span style="flex:1;font-size:12px">${label}</span>
+    </label>`;
+  }
+  document.getElementById('col-list').innerHTML = html;
+}
+
+function toggleCol(key, checked) {
+  if (checked) visibleCols.add(key);
+  else visibleCols.delete(key);
+  renderAll();
+}
+
+function closeColModal() {
+  document.getElementById('col-modal').classList.remove('visible');
 }
 
 function clearAll(treeIdx) {

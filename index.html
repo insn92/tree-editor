@@ -10,25 +10,27 @@
 <body>
 <div id="app">
   <div class="toolbar">
-    <button onclick="addRootNode(0)">+ Корень</button>
-    <button onclick="addRootNode(1)">+ Корень (Дерево 2)</button>
-    <div class="sep"></div>
-    <button onclick="expandAll(0)">Развернуть все (1)</button>
-    <button onclick="expandAll(1)">Развернуть все (2)</button>
-    <button onclick="collapseAll(0)">Свернуть все (1)</button>
-    <button onclick="collapseAll(1)">Свернуть все (2)</button>
-    <div class="sep"></div>
-    <button onclick="importXlsx(0)">Импорт xlsx (1)</button>
-    <button onclick="importXlsx(1)">Импорт xlsx (2)</button>
-    <div class="sep"></div>
-    <button onclick="exportXlsx(0)">Экспорт xlsx (1)</button>
-    <button onclick="exportXlsx(1)">Экспорт xlsx (2)</button>
-    <div class="sep"></div>
-    <button onclick="showAttrManager()">Атрибуты</button>
-    <button onclick="clearAll(0)">Очистить (1)</button>
-    <button onclick="clearAll(1)">Очистить (2)</button>
-    <div class="sep"></div>
-    <span id="clipboard-indicator" style="font-size:11px;color:var(--fg2);display:none">📋 В буфере: <span id="clipboard-name"></span> <button onclick="clipboard=null;updateClipboardIndicator()" style="padding:1px 6px;font-size:10px;margin-left:4px">✕</button></span>
+    <div class="toolbar-left">
+      <button onclick="addRootNode(0)">+ Корень</button>
+      <button onclick="expandAll(0)">Развернуть все</button>
+      <button onclick="collapseAll(0)">Свернуть все</button>
+      <button onclick="importXlsx(0)">Импорт xlsx</button>
+      <button onclick="exportXlsx(0)">Экспорт xlsx</button>
+      <button onclick="clearAll(0)">Очистить</button>
+    </div>
+    <div class="toolbar-center">
+      <button onclick="showAttrManager()">Атрибуты</button>
+      <button onclick="showColManager()">Колонки</button>
+      <span id="clipboard-indicator" style="font-size:11px;color:var(--fg2);display:none">📋 <span id="clipboard-name"></span> <button onclick="clipboard=null;updateClipboardIndicator()" style="padding:1px 6px;font-size:10px;margin-left:4px">✕</button></span>
+    </div>
+    <div class="toolbar-right">
+      <button onclick="addRootNode(1)">+ Корень</button>
+      <button onclick="expandAll(1)">Развернуть все</button>
+      <button onclick="collapseAll(1)">Свернуть все</button>
+      <button onclick="importXlsx(1)">Импорт xlsx</button>
+      <button onclick="exportXlsx(1)">Экспорт xlsx</button>
+      <button onclick="clearAll(1)">Очистить</button>
+    </div>
   </div>
 
   <div class="panels" id="panels">
@@ -97,6 +99,16 @@
     </div>
     <div class="btn-row" style="margin-top:14px">
       <button onclick="closeAttrModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="col-modal">
+  <div class="modal">
+    <h3>Видимость колонок</h3>
+    <div id="col-list"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button onclick="closeColModal()">Закрыть</button>
     </div>
   </div>
 </div>
