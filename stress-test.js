@@ -9,85 +9,66 @@ function loadStressTestData() {
   tree.selected = null;
   nextId[0] = 1;
 
-  const categories = [
-    'Кузов', 'Двигатель', 'Трансмиссия', 'Ходовая часть',
-    'Электрика', 'Освещение', 'Интерьер', 'Безопасность'
-  ];
-
-  const subComponents = [
-    'Блок', 'Модуль', 'Узел', 'Датчик', 'Реле', 'Жгут',
-    'Кронштейн', 'Крепёж', 'Прокладка', 'Подшипник',
-    'Шестерня', 'Вал', 'Пружина', 'Клапан', 'Фильтр',
-    'Насос', 'Цилиндр', 'Диск', 'Рычаг', 'Тяга'
-  ];
-
   const materials = ['Сталь', 'Алюминий', 'Пластик', 'Резина', 'Медь'];
   const statuses = ['Серийный', 'Опытный', 'Консервированный'];
+  const names = ['Блок', 'Модуль', 'Узел', 'Датчик', 'Реле', 'Жгут', 'Кронштейн', 'Крепёж', 'Прокладка', 'Подшипник'];
 
   let counter = 0;
 
-  function buildSubtree(parentId, depth) {
-    if (depth >= 19 || counter >= 10000) return;
-
-    const childCount = Math.min(
-      Math.floor(Math.random() * 4) + 2,
-      10000 - counter
-    );
-
-    for (let i = 0; i < childCount && counter < 10000; i++) {
-      counter++;
-      const level = depth + 1;
-      const funcCode = String(counter).padStart(7, '0');
-      const subCode = String(i + 1).padStart(2, '0');
-      const nomenclature = `412300-${funcCode}-${subCode}-011-6-01`;
-      const name = subComponents[counter % subComponents.length] + ' ' + counter;
-
-      const node = makeNode(0, name, level, parentId, {
-        nomenclature: nomenclature,
-        codeCfh: funcCode,
-        revision: String.fromCharCode(65 + (counter % 4)),
-        quantity: String(Math.floor(Math.random() * 50) + 1),
-        na: counter % 100 === 0 ? 'Да' : '',
-        note: counter % 50 === 0 ? 'Примечание #' + counter : '',
-        routeStatus: statuses[counter % 3],
-        routeCode: 'МР-' + String(counter).padStart(4, '0'),
-        routeName: 'Операция ' + counter,
-        attrs: {
-          'Материал': materials[counter % 5],
-          'Масса': String(Math.floor(Math.random() * 100) + 1) + ' кг'
-        },
-        _demo: true
-      });
-
-      if (depth < 2) tree.expanded.add(node.id);
-
-      buildSubtree(node.id, depth + 1);
-    }
-  }
-
-  for (const cat of categories) {
-    if (counter >= 10000) break;
-
+  function addComp(name, level, parentId, depth) {
+    if (counter >= 10000) return;
     counter++;
     const funcCode = String(counter).padStart(7, '0');
-    const nomenclature = `412300-${funcCode}-00-011-6-01`;
-
-    const node = makeNode(0, cat, 0, null, {
-      nomenclature: nomenclature,
+    const node = makeNode(0, name, level, parentId, {
+      nomenclature: `412300-${funcCode}-${String(level).padStart(2,'0')}-011-6-01`,
       codeCfh: funcCode,
-      revision: 'A',
-      quantity: '1',
-      na: '',
+      revision: String.fromCharCode(65 + (counter % 4)),
+      quantity: String(Math.floor(Math.random() * 50) + 1),
+      na: counter % 100 === 0 ? 'Да' : '',
       note: '',
-      routeStatus: 'Серийный',
-      routeCode: 'МР-0001',
-      routeName: 'Сборка ' + cat,
-      attrs: { 'Материал': 'Сталь', 'Масса': '50 кг' },
+      routeStatus: statuses[counter % 3],
+      routeCode: 'МР-' + String(counter).padStart(4, '0'),
+      routeName: 'Операция ' + counter,
+      attrs: { 'Материал': materials[counter % 5] },
       _demo: true
     });
+    if (depth < 3) tree.expanded.add(node.id);
+    return node;
+  }
 
-    tree.expanded.add(node.id);
-    buildSubtree(node.id, 1);
+  // Уровень 0: 8 корней
+  const roots = ['Кузов', 'Двигатель', 'Трансмиссия', 'Ходовая часть', 'Электрика', 'Освещение', 'Интерьер', 'Безопасность'];
+  for (const r of roots) {
+    if (counter >= 10000) break;
+    const root = addComp(r, 0, null, 0);
+    if (!root) break;
+
+    // Уровень 1: 3-6 подузлов на каждый корень
+    for (let i = 0; i < 5 && counter < 10000; i++) {
+      const n1 = addComp(names[i % names.length] + ' ' + (i+1), 1, root.id, 1);
+      if (!n1) break;
+
+      // Уровень 2: 3-8 подузлов
+      for (let j = 0; j < 5 && counter < 10000; j++) {
+        const n2 = addComp(names[(i+j) % names.length] + ' ' + (i+1) + '.' + (j+1), 2, n1.id, 2);
+        if (!n2) break;
+
+        // Уровень 3: 2-5 подузлов
+        for (let k = 0; k < 3 && counter < 10000; k++) {
+          const n3 = addComp(names[(i+j+k) % names.length] + ' ' + (i+1) + '.' + (j+1) + '.' + (k+1), 3, n2.id, 3);
+          if (!n3) break;
+
+          // Уровень 4-20: по 1-2 узла глубину
+          let parent = n3;
+          for (let d = 4; d <= 12 && counter < 10000; d++) {
+            const child = addComp(names[(counter) % names.length] + ' ' + counter, d, parent.id, d);
+            if (!child) break;
+            if (d <= 5) tree.expanded.add(child.id);
+            parent = child;
+          }
+        }
+      }
+    }
   }
 
   renderAll();
