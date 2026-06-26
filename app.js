@@ -306,6 +306,7 @@ function renderTree(treeIdx) {
     const sel = tree.selected === item.nodeId ? ' selected' : '';
     const modClass = node._added ? ' node-added' : (node._modified ? ' node-modified' : '');
     const deactClass = node.na === 'Да' ? ' node-deactivated' : '';
+    const matchClass = searchQuery && node.codeCfh && node.codeCfh.toLowerCase().includes(searchQuery) ? ' node-match' : '';
     const indent = item.depth * 20;
 
     let expandIcon = '';
@@ -340,7 +341,7 @@ function renderTree(treeIdx) {
       cells += `<div class="cell cell-attr" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'attr','${a}')" title="${escapeHtml(String(v))}">${vHtml}</div>`;
     }
 
-    html += `<div class="tree-row${sel}${modClass}${deactClass}" style="top:${y}px" data-id="${item.nodeId}" data-tree="${treeIdx}"
+    html += `<div class="tree-row${sel}${modClass}${deactClass}${matchClass}" style="top:${y}px" data-id="${item.nodeId}" data-tree="${treeIdx}"
       onclick="selectNode(${treeIdx},${item.nodeId})"
       oncontextmenu="showCtx(event,${treeIdx},${item.nodeId})"
       draggable="true"
@@ -662,6 +663,66 @@ function clearSearch(treeIdx) {
   document.getElementById(`search-${treeIdx}`).value = '';
   trees[treeIdx].searchQuery = '';
   renderTree(treeIdx);
+}
+
+function findMatchesByCode(targetTreeIdx) {
+  const srcTreeIdx = targetTreeIdx === 0 ? 1 : 0;
+  const srcTree = trees[srcTreeIdx];
+  const srcNodeId = srcTree.selected;
+  
+  if (srcNodeId === null) {
+    alert('Сначала выделите компонент в ' + (srcTreeIdx === 0 ? 'Дереве 1' : 'Дереве 2'));
+    return;
+  }
+  
+  const srcNode = srcTree.nodes.get(srcNodeId);
+  if (!srcNode || !srcNode.codeCfh) {
+    alert('У выделенного компонента нет функционального кода');
+    return;
+  }
+  
+  const code = srcNode.codeCfh;
+  
+  // Find all nodes in target tree with same codeCfh
+  const targetTree = trees[targetTreeIdx];
+  const matches = [];
+  for (const [id, node] of targetTree.nodes) {
+    if (node.codeCfh === code) {
+      matches.push(id);
+    }
+  }
+  
+  if (matches.length === 0) {
+    alert('В ' + (targetTreeIdx === 0 ? 'Дереве 1' : 'Дереве 2') + ' нет компонентов с кодом ' + code);
+    return;
+  }
+  
+  // Expand parents of all matches to make them visible
+  for (const matchId of matches) {
+    let parentId = targetTree.nodes.get(matchId).parentId;
+    while (parentId !== null) {
+      targetTree.expanded.add(parentId);
+      parentId = targetTree.nodes.get(parentId).parentId;
+    }
+  }
+  
+  // Select first match
+  targetTree.selected = matches[0];
+  
+  // Set search query to show matches highlighted
+  document.getElementById(`search-${targetTreeIdx}`).value = code;
+  targetTree.searchQuery = code;
+  
+  renderTree(targetTreeIdx);
+  
+  // Scroll to first match
+  const container = document.getElementById(`tc-${targetTreeIdx}`);
+  const flatIdx = targetTree.flat.findIndex(f => f.nodeId === matches[0]);
+  if (flatIdx !== -1) {
+    container.scrollTop = flatIdx * ROW_H - container.clientHeight / 2;
+  }
+  
+  alert('Найдено совпадений: ' + matches.length + ' (код ' + code + ')');
 }
 
 function toggleAttr(name, checked) {

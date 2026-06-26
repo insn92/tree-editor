@@ -21,6 +21,8 @@
     <div class="toolbar-center">
       <button onclick="showAttrManager()">Атрибуты</button>
       <button onclick="showColManager()">Колонки</button>
+      <button onclick="findMatchesByCode(0)" title="Найти совпадения по коду из Дерева 2 в Дереве 1">Найти по коду (→1)</button>
+      <button onclick="findMatchesByCode(1)" title="Найти совпадения по коду из Дерева 1 в Дереве 2">Найти по коду (→2)</button>
       <span id="clipboard-indicator" style="font-size:11px;color:var(--fg2);display:none">📋 <span id="clipboard-name"></span> <button onclick="clipboard=null;updateClipboardIndicator()" style="padding:1px 6px;font-size:10px;margin-left:4px">✕</button></span>
     </div>
     <div class="toolbar-right">

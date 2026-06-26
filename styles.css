@@ -84,6 +84,7 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var
 .node-modified{background:rgba(255,213,79,0.22) !important}
 .node-deactivated{opacity:0.4}
 .node-deactivated .cell-name-text{text-decoration:line-through}
+.node-match{background:rgba(79,195,247,0.3) !important;border:1px solid var(--accent)}
 .tree-row.selected{background:var(--selected) !important}
 
 .th{position:relative;user-select:none}
