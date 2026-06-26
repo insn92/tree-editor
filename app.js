@@ -306,7 +306,7 @@ function renderTree(treeIdx) {
     const sel = tree.selected === item.nodeId ? ' selected' : '';
     const modClass = node._added ? ' node-added' : (node._modified ? ' node-modified' : '');
     const deactClass = node.na === 'Да' ? ' node-deactivated' : '';
-    const matchClass = searchQuery && node.codeCfh && node.codeCfh.toLowerCase().includes(searchQuery) ? ' node-match' : '';
+    const matchClass = searchQuery && getFunctionalCode(node.nomenclature) === searchQuery ? ' node-match' : '';
     const indent = item.depth * 20;
 
     let expandIcon = '';
@@ -665,6 +665,12 @@ function clearSearch(treeIdx) {
   renderTree(treeIdx);
 }
 
+function getFunctionalCode(nomenclature) {
+  if (!nomenclature) return '';
+  const parts = nomenclature.split('-');
+  return parts.length >= 2 ? parts[1] : '';
+}
+
 function findMatchesByCode(targetTreeIdx) {
   const srcTreeIdx = targetTreeIdx === 0 ? 1 : 0;
   const srcTree = trees[srcTreeIdx];
@@ -676,24 +682,24 @@ function findMatchesByCode(targetTreeIdx) {
   }
   
   const srcNode = srcTree.nodes.get(srcNodeId);
-  if (!srcNode || !srcNode.codeCfh) {
-    alert('У выделенного компонента нет функционального кода');
+  const funcCode = getFunctionalCode(srcNode.nomenclature);
+  
+  if (!funcCode) {
+    alert('У выделенного компонента нет номенклатуры или она некорректна');
     return;
   }
   
-  const code = srcNode.codeCfh;
-  
-  // Find all nodes in target tree with same codeCfh
+  // Find all nodes in target tree with same functional code
   const targetTree = trees[targetTreeIdx];
   const matches = [];
   for (const [id, node] of targetTree.nodes) {
-    if (node.codeCfh === code) {
+    if (getFunctionalCode(node.nomenclature) === funcCode) {
       matches.push(id);
     }
   }
   
   if (matches.length === 0) {
-    alert('В ' + (targetTreeIdx === 0 ? 'Дереве 1' : 'Дереве 2') + ' нет компонентов с кодом ' + code);
+    alert('В ' + (targetTreeIdx === 0 ? 'Дереве 1' : 'Дереве 2') + ' нет компонентов с функциональным кодом ' + funcCode);
     return;
   }
   
@@ -710,8 +716,8 @@ function findMatchesByCode(targetTreeIdx) {
   targetTree.selected = matches[0];
   
   // Set search query to show matches highlighted
-  document.getElementById(`search-${targetTreeIdx}`).value = code;
-  targetTree.searchQuery = code;
+  document.getElementById(`search-${targetTreeIdx}`).value = funcCode;
+  targetTree.searchQuery = funcCode;
   
   renderTree(targetTreeIdx);
   
@@ -722,7 +728,7 @@ function findMatchesByCode(targetTreeIdx) {
     container.scrollTop = flatIdx * ROW_H - container.clientHeight / 2;
   }
   
-  alert('Найдено совпадений: ' + matches.length + ' (код ' + code + ')');
+  alert('Найдено совпадений: ' + matches.length + ' (функциональный код ' + funcCode + ')');
 }
 
 function toggleAttr(name, checked) {
