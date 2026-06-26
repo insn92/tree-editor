@@ -52,6 +52,7 @@ function makeNode(treeIdx, name, level, parentId, data) {
     _modified: false
   };
   trees[treeIdx].nodes.set(id, node);
+  trees[treeIdx].childrenMap = null;
   if (parentId === null) trees[treeIdx].roots.push(id);
   return node;
 }
@@ -72,16 +73,13 @@ function deleteNode(treeIdx, nodeId) {
   const tree = trees[treeIdx];
   const node = tree.nodes.get(nodeId);
   if (!node) return;
-  const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
+  buildChildrenIndex(treeIdx);
+  const children = tree.childrenMap.get(nodeId) || [];
   for (const ch of children) deleteNode(treeIdx, ch.id);
   tree.nodes.delete(nodeId);
+  tree.childrenMap = null;
   if (node.parentId === null) {
     tree.roots = tree.roots.filter(id => id !== nodeId);
-  } else {
-    const parent = tree.nodes.get(node.parentId);
-    if (parent) {
-      const siblings = [...tree.nodes.values()].filter(n => n.parentId === parent.id);
-    }
   }
   if (tree.selected === nodeId) tree.selected = null;
 }
@@ -132,7 +130,8 @@ function cloneSubtree(srcTree, dstTree, srcId, newId, newParentId) {
     _added: true, _modified: false
   };
   trees[dstTree].nodes.set(dstId, newNode);
-  const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
+  buildChildrenIndex(srcTree);
+  const children = trees[srcTree].childrenMap.get(srcId) || [];
   for (const ch of children) {
     cloneSubtree(srcTree, dstTree, ch.id, dstId, dstId);
   }
@@ -146,7 +145,8 @@ function replaceNode(srcTree, srcId, dstTree, dstId) {
   const oldParentId = dst.parentId;
   
   // Find position among siblings before deleting
-  const siblings = [...trees[dstTree].nodes.values()].filter(n => n.parentId === oldParentId);
+  buildChildrenIndex(dstTree);
+  const siblings = trees[dstTree].childrenMap.get(oldParentId) || [];
   const oldIndex = siblings.findIndex(n => n.id === dstId);
   const prevSiblingId = oldIndex > 0 ? siblings[oldIndex - 1].id : 0;
   const nextSiblingId = oldIndex < siblings.length - 1 ? siblings[oldIndex + 1].id : prevSiblingId + 1000;
@@ -206,7 +206,8 @@ function cloneSubtreeWithCalculatedId(srcTree, dstTree, srcId, newParentId, base
     _added: true, _modified: false
   };
   trees[dstTree].nodes.set(dstId, newNode);
-  const children = [...trees[srcTree].nodes.values()].filter(n => n.parentId === srcId);
+  buildChildrenIndex(srcTree);
+  const children = trees[srcTree].childrenMap.get(srcId) || [];
   for (const ch of children) {
     cloneSubtreeWithCalculatedId(srcTree, dstTree, ch.id, dstId, baseId);
   }
@@ -217,8 +218,33 @@ function rebuildLevels(treeIdx, nodeId, baseLevel) {
   const node = tree.nodes.get(nodeId);
   if (!node) return;
   node.level = baseLevel;
-  const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
+  buildChildrenIndex(treeIdx);
+  const children = tree.childrenMap.get(nodeId) || [];
   for (const ch of children) rebuildLevels(treeIdx, ch.id, baseLevel + 1);
+}
+
+function buildChildrenIndex(treeIdx) {
+  const tree = trees[treeIdx];
+  tree.childrenMap = new Map();
+  for (const node of tree.nodes.values()) {
+    if (node.parentId !== null && node.parentId !== undefined) {
+      if (!tree.childrenMap.has(node.parentId)) tree.childrenMap.set(node.parentId, []);
+      tree.childrenMap.get(node.parentId).push(node);
+    }
+  }
+  for (const arr of tree.childrenMap.values()) {
+    arr.sort((a, b) => a.id - b.id);
+  }
+}
+
+function getChildren(treeIdx, nodeId) {
+  const tree = trees[treeIdx];
+  if (!tree.childrenMap) buildChildrenIndex(treeIdx);
+  return tree.childrenMap.get(nodeId) || [];
+}
+
+function invalidateChildrenIndex(treeIdx) {
+  if (trees[treeIdx]) trees[treeIdx].childrenMap = null;
 }
 
 function buildFlat(treeIdx) {
@@ -226,6 +252,8 @@ function buildFlat(treeIdx) {
   const flat = [];
   const query = tree.searchQuery.toLowerCase().trim();
   const isSearching = query.length > 0;
+
+  buildChildrenIndex(treeIdx);
 
   function matches(node) {
     if (!query) return true;
@@ -245,15 +273,13 @@ function buildFlat(treeIdx) {
   function walk(nodeId, depth) {
     const node = tree.nodes.get(nodeId);
     if (!node) return;
-    const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
-    children.sort((a, b) => a.id - b.id);
+    const children = tree.childrenMap.get(nodeId) || [];
     const hasChildren = children.length > 0;
     const expanded = tree.expanded.has(nodeId);
     const matched = matches(node);
 
     if (matched) {
       flat.push({ nodeId, depth, hasChildren, expanded, matched: true });
-      // When searching, expand to show matching children
       if (hasChildren && (expanded || isSearching)) {
         for (const ch of children) walk(ch.id, depth + 1);
       }
@@ -625,7 +651,8 @@ function toggleExpand(treeIdx, nodeId) {
 
 function collapseDescendants(treeIdx, nodeId) {
   const tree = trees[treeIdx];
-  const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
+  buildChildrenIndex(treeIdx);
+  const children = tree.childrenMap.get(nodeId) || [];
   for (const ch of children) {
     tree.expanded.delete(ch.id);
     collapseDescendants(treeIdx, ch.id);
@@ -634,9 +661,9 @@ function collapseDescendants(treeIdx, nodeId) {
 
 function expandAll(treeIdx) {
   const tree = trees[treeIdx];
-  for (const id of tree.nodes.keys()) {
-    const hasChildren = [...tree.nodes.values()].some(n => n.parentId === id);
-    if (hasChildren) tree.expanded.add(id);
+  buildChildrenIndex(treeIdx);
+  for (const [parentId, children] of tree.childrenMap) {
+    if (children.length > 0) tree.expanded.add(parentId);
   }
   renderTree(treeIdx);
 }
@@ -857,7 +884,8 @@ function handleCtxAction(action) {
 function expandSubtree(treeIdx, nodeId) {
   const tree = trees[treeIdx];
   tree.expanded.add(nodeId);
-  const children = [...tree.nodes.values()].filter(n => n.parentId === nodeId);
+  buildChildrenIndex(treeIdx);
+  const children = tree.childrenMap.get(nodeId) || [];
   for (const ch of children) expandSubtree(treeIdx, ch.id);
 }
 
@@ -873,7 +901,8 @@ function deactivateSubtree(treeIdx, nodeId, state) {
   if (!node) return;
   node.na = state;
   node._modified = true;
-  const children = [...trees[treeIdx].nodes.values()].filter(n => n.parentId === nodeId);
+  buildChildrenIndex(treeIdx);
+  const children = trees[treeIdx].childrenMap.get(nodeId) || [];
   for (const ch of children) deactivateSubtree(treeIdx, ch.id, state);
 }
 
@@ -1135,9 +1164,10 @@ function loadXlsxData(treeIdx, data) {
     parentStack.push({ id: node.id, level });
   }
 
+  buildChildrenIndex(treeIdx);
   for (const rootId of tree.roots) {
     tree.expanded.add(rootId);
-    const children1 = [...tree.nodes.values()].filter(n => n.parentId === rootId);
+    const children1 = tree.childrenMap.get(rootId) || [];
     for (const ch of children1) tree.expanded.add(ch.id);
   }
   renderAll();
