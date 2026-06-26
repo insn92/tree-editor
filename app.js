@@ -42,6 +42,7 @@ function makeNode(treeIdx, name, level, parentId, data) {
     codeCfh: d.codeCfh || '',
     revision: d.revision || '',
     quantity: d.quantity || '',
+    na: d.na || '',
     note: d.note || '',
     routeStatus: d.routeStatus || '',
     routeCode: d.routeCode || '',
@@ -224,15 +225,16 @@ function buildFlat(treeIdx) {
   const tree = trees[treeIdx];
   const flat = [];
   const query = tree.searchQuery.toLowerCase().trim();
+  const isSearching = query.length > 0;
 
   function matches(node) {
     if (!query) return true;
     if (node.name.toLowerCase().includes(query)) return true;
     if (String(node.level).includes(query)) return true;
-    if (node.nomenclature && node.nomenclature.includes(query)) return true;
+    if (node.nomenclature && node.nomenclature.toLowerCase().includes(query)) return true;
     if (node.revision && node.revision.toLowerCase().includes(query)) return true;
     if (node.codeCfh && node.codeCfh.toLowerCase().includes(query)) return true;
-    if (node.quantity && String(node.quantity).includes(query)) return true;
+    if (node.quantity && String(node.quantity).toLowerCase().includes(query)) return true;
     for (const a of globalAttrs) {
       const v = node.attrs[a];
       if (v && String(v).toLowerCase().includes(query)) return true;
@@ -251,10 +253,11 @@ function buildFlat(treeIdx) {
 
     if (matched) {
       flat.push({ nodeId, depth, hasChildren, expanded, matched: true });
-      if (hasChildren && expanded) {
+      // When searching, expand to show matching children
+      if (hasChildren && (expanded || isSearching)) {
         for (const ch of children) walk(ch.id, depth + 1);
       }
-    } else if (hasChildren && expanded) {
+    } else if (hasChildren && (expanded || isSearching)) {
       const startLen = flat.length;
       for (const ch of children) walk(ch.id, depth + 1);
       if (flat.length > startLen) {
@@ -302,6 +305,7 @@ function renderTree(treeIdx) {
     const y = i * ROW_H;
     const sel = tree.selected === item.nodeId ? ' selected' : '';
     const modClass = node._added ? ' node-added' : (node._modified ? ' node-modified' : '');
+    const deactClass = node.na === 'Да' ? ' node-deactivated' : '';
     const indent = item.depth * 20;
 
     let expandIcon = '';
@@ -322,7 +326,7 @@ function renderTree(treeIdx) {
     if (visibleCols.has('rev')) cells += `<div class="cell cell-rev" style="width:${colWidths[treeIdx].rev}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'revision')">${escapeHtml(node.revision || '')}</div>`;
     if (visibleCols.has('name')) cells += `<div class="cell cell-name" style="width:${colWidths[treeIdx].name}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'name')"><span class="node-indent" style="width:${indent}px"></span><span class="cell-name-text" title="${escapeHtml(node.name)}">${nameHtml}</span></div>`;
     if (visibleCols.has('qty')) cells += `<div class="cell cell-qty" style="width:${colWidths[treeIdx].qty}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'quantity')">${escapeHtml(String(node.quantity || ''))}</div>`;
-    if (visibleCols.has('na')) cells += `<div class="cell cell-na" style="width:${colWidths[treeIdx].na}px"></div>`;
+    if (visibleCols.has('na')) cells += `<div class="cell cell-na" style="width:${colWidths[treeIdx].na}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'na')">${escapeHtml(node.na || '')}</div>`;
     if (visibleCols.has('note')) cells += `<div class="cell cell-note" style="width:${colWidths[treeIdx].note}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'note')">${escapeHtml(node.note || '')}</div>`;
     if (visibleCols.has('routeStatus')) cells += `<div class="cell cell-route-status" style="width:${colWidths[treeIdx].routeStatus}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeStatus')">${escapeHtml(node.routeStatus || '')}</div>`;
     if (visibleCols.has('routeCode')) cells += `<div class="cell cell-route-code" style="width:${colWidths[treeIdx].routeCode}px" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'routeCode')">${escapeHtml(node.routeCode || '')}</div>`;
@@ -336,7 +340,7 @@ function renderTree(treeIdx) {
       cells += `<div class="cell cell-attr" ondblclick="startInlineEdit(event,${treeIdx},${item.nodeId},'attr','${a}')" title="${escapeHtml(String(v))}">${vHtml}</div>`;
     }
 
-    html += `<div class="tree-row${sel}${modClass}" style="top:${y}px" data-id="${item.nodeId}" data-tree="${treeIdx}"
+    html += `<div class="tree-row${sel}${modClass}${deactClass}" style="top:${y}px" data-id="${item.nodeId}" data-tree="${treeIdx}"
       onclick="selectNode(${treeIdx},${item.nodeId})"
       oncontextmenu="showCtx(event,${treeIdx},${item.nodeId})"
       draggable="true"
@@ -379,6 +383,7 @@ function startInlineEdit(e, treeIdx, nodeId, field, attrName) {
   else if (field === 'codeCfh') val = node.codeCfh || '';
   else if (field === 'revision') val = node.revision || '';
   else if (field === 'quantity') val = String(node.quantity || '');
+  else if (field === 'na') val = node.na || '';
   else if (field === 'note') val = node.note || '';
   else if (field === 'routeStatus') val = node.routeStatus || '';
   else if (field === 'routeCode') val = node.routeCode || '';
@@ -414,6 +419,7 @@ function commitInlineEdit() {
   else if (field === 'codeCfh') node.codeCfh = newVal;
   else if (field === 'revision') node.revision = newVal;
   else if (field === 'quantity') node.quantity = newVal;
+  else if (field === 'na') node.na = newVal;
   else if (field === 'note') node.note = newVal;
   else if (field === 'routeStatus') node.routeStatus = newVal;
   else if (field === 'routeCode') node.routeCode = newVal;
@@ -652,6 +658,12 @@ function onSearch(treeIdx) {
   renderTree(treeIdx);
 }
 
+function clearSearch(treeIdx) {
+  document.getElementById(`search-${treeIdx}`).value = '';
+  trees[treeIdx].searchQuery = '';
+  renderTree(treeIdx);
+}
+
 function toggleAttr(name, checked) {
   if (checked) visibleAttrs.add(name);
   else visibleAttrs.delete(name);
@@ -753,6 +765,10 @@ function handleCtxAction(action) {
       updateClipboardIndicator();
       renderAll();
       break;
+    case 'toggle-deactivate':
+      toggleDeactivate(treeIdx, nodeId);
+      renderTree(treeIdx);
+      break;
     case 'expand-children':
       expandSubtree(treeIdx, nodeId);
       renderTree(treeIdx);
@@ -778,6 +794,22 @@ function expandSubtree(treeIdx, nodeId) {
   for (const ch of children) expandSubtree(treeIdx, ch.id);
 }
 
+function toggleDeactivate(treeIdx, nodeId) {
+  const node = trees[treeIdx].nodes.get(nodeId);
+  if (!node) return;
+  const newState = node.na === 'Да' ? '' : 'Да';
+  deactivateSubtree(treeIdx, nodeId, newState);
+}
+
+function deactivateSubtree(treeIdx, nodeId, state) {
+  const node = trees[treeIdx].nodes.get(nodeId);
+  if (!node) return;
+  node.na = state;
+  node._modified = true;
+  const children = [...trees[treeIdx].nodes.values()].filter(n => n.parentId === nodeId);
+  for (const ch of children) deactivateSubtree(treeIdx, ch.id, state);
+}
+
 function openEditModal(treeIdx, nodeId) {
   const node = trees[treeIdx].nodes.get(nodeId);
   if (!node) return;
@@ -789,6 +821,7 @@ function openEditModal(treeIdx, nodeId) {
   html += `<label>Ревизия</label><input type="text" id="m-revision" value="${escapeHtml(node.revision || '')}">`;
   html += `<label>Наименование</label><input type="text" id="m-name" value="${escapeHtml(node.name)}">`;
   html += `<label>Количество</label><input type="text" id="m-quantity" value="${escapeHtml(String(node.quantity || ''))}">`;
+  html += `<label>N/A</label><input type="text" id="m-na" value="${escapeHtml(node.na || '')}">`;
   html += `<label>Примечание</label><input type="text" id="m-note" value="${escapeHtml(node.note || '')}">`;
   html += `<label>Маршрут.Статус</label><input type="text" id="m-routeStatus" value="${escapeHtml(node.routeStatus || '')}">`;
   html += `<label>Маршрут.Код</label><input type="text" id="m-routeCode" value="${escapeHtml(node.routeCode || '')}">`;
@@ -818,6 +851,7 @@ function saveModal() {
   node.revision = document.getElementById('m-revision').value;
   node.name = document.getElementById('m-name').value || 'Без названия';
   node.quantity = document.getElementById('m-quantity').value;
+  node.na = document.getElementById('m-na').value;
   node.note = document.getElementById('m-note').value;
   node.routeStatus = document.getElementById('m-routeStatus').value;
   node.routeCode = document.getElementById('m-routeCode').value;
@@ -1014,6 +1048,7 @@ function loadXlsxData(treeIdx, data) {
     const codeCfh = row['Код ЦФХ'] || '';
     const revision = row['Ревизия'] || '';
     const quantity = row['Кол-во'] || '';
+    const na = row['N/A'] || '';
     const note = row['Примечание'] || '';
     const routeStatus = row['Маршрут.Статус'] || '';
     const routeCode = row['Маршрут.Код'] || '';
@@ -1029,7 +1064,7 @@ function loadXlsxData(treeIdx, data) {
       if (row[a] !== undefined && row[a] !== null && row[a] !== '') attrs[a] = row[a];
     }
 
-    const node = makeNode(treeIdx, String(name), level, parentId, { nomenclature, codeCfh, revision, quantity, note, routeStatus, routeCode, routeName, attrs, _demo: true });
+    const node = makeNode(treeIdx, String(name), level, parentId, { nomenclature, codeCfh, revision, quantity, na, note, routeStatus, routeCode, routeName, attrs, _demo: true });
     parentStack.push({ id: node.id, level });
   }
 
@@ -1055,7 +1090,7 @@ function exportXlsx(treeIdx) {
       'Ревизия': node.revision || '',
       'Наименование': node.name,
       'Кол-во': node.quantity || '',
-      'N/A': '',
+      'N/A': node.na || '',
       'Примечание': node.note || '',
       'Маршрут.Статус': node.routeStatus || '',
       'Маршрут.Код': node.routeCode || '',

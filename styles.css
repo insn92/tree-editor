@@ -82,6 +82,8 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var
 
 .node-added{background:rgba(102,187,106,0.22) !important}
 .node-modified{background:rgba(255,213,79,0.22) !important}
+.node-deactivated{opacity:0.4}
+.node-deactivated .cell-name-text{text-decoration:line-through}
 .tree-row.selected{background:var(--selected) !important}
 
 .th{position:relative;user-select:none}

@@ -37,7 +37,9 @@
     <div class="panel" id="panel-0">
       <div class="panel-header">
         <span style="font-size:12px;font-weight:600;color:var(--accent)">Дерево 1</span>
-        <input type="text" id="search-0" placeholder="Поиск..." oninput="onSearch(0)">
+        <input type="text" id="search-0" placeholder="Поиск..." onkeydown="if(event.key==='Enter')onSearch(0)">
+        <button onclick="onSearch(0)" style="padding:2px 8px;font-size:11px">Найти</button>
+        <button onclick="clearSearch(0)" style="padding:2px 8px;font-size:11px">Сброс</button>
       </div>
       <div class="attr-filter" id="attr-filter-0"></div>
       <div class="tree-container" id="tc-0" onscroll="onScroll(0)">
@@ -50,7 +52,9 @@
     <div class="panel" id="panel-1">
       <div class="panel-header">
         <span style="font-size:12px;font-weight:600;color:var(--accent)">Дерево 2</span>
-        <input type="text" id="search-1" placeholder="Поиск..." oninput="onSearch(1)">
+        <input type="text" id="search-1" placeholder="Поиск..." onkeydown="if(event.key==='Enter')onSearch(1)">
+        <button onclick="onSearch(1)" style="padding:2px 8px;font-size:11px">Найти</button>
+        <button onclick="clearSearch(1)" style="padding:2px 8px;font-size:11px">Сброс</button>
       </div>
       <div class="attr-filter" id="attr-filter-1"></div>
       <div class="tree-container" id="tc-1" onscroll="onScroll(1)">
@@ -72,6 +76,7 @@
   <div class="cm-item" data-action="paste">Вставить</div>
   <div class="cm-item" data-action="replace">Заменить узел</div>
   <div class="cm-sep"></div>
+  <div class="cm-item" data-action="toggle-deactivate">Деактивировать / Активировать</div>
   <div class="cm-item" data-action="expand-children">Развернуть поддерево</div>
   <div class="cm-item" data-action="collapse-children">Свернуть поддерево</div>
   <div class="cm-sep"></div>
