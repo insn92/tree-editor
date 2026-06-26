@@ -26,15 +26,15 @@ function loadStressTestData() {
 
   let counter = 0;
 
-  function buildSubtree(parentId, parentCode, depth, targetCount) {
-    if (depth > 19 || counter >= targetCount) return;
+  function buildSubtree(parentId, depth) {
+    if (depth >= 19 || counter >= 10000) return;
 
     const childCount = Math.min(
-      Math.floor(Math.random() * 5) + 2,
-      targetCount - counter
+      Math.floor(Math.random() * 4) + 2,
+      10000 - counter
     );
 
-    for (let i = 0; i < childCount && counter < targetCount; i++) {
+    for (let i = 0; i < childCount && counter < 10000; i++) {
       counter++;
       const level = depth + 1;
       const funcCode = String(counter).padStart(7, '0');
@@ -48,7 +48,7 @@ function loadStressTestData() {
         revision: String.fromCharCode(65 + (counter % 4)),
         quantity: String(Math.floor(Math.random() * 50) + 1),
         na: counter % 100 === 0 ? 'Да' : '',
-        note: counter % 50 === 0 ? 'Особое примечание' : '',
+        note: counter % 50 === 0 ? 'Примечание #' + counter : '',
         routeStatus: statuses[counter % 3],
         routeCode: 'МР-' + String(counter).padStart(4, '0'),
         routeName: 'Операция ' + counter,
@@ -59,15 +59,12 @@ function loadStressTestData() {
         _demo: true
       });
 
-      // Expand first 3 levels
-      if (depth < 3) tree.expanded.add(node.id);
+      if (depth < 2) tree.expanded.add(node.id);
 
-      // Recurse deeper
-      buildSubtree(node.id, funcCode, depth, targetCount);
+      buildSubtree(node.id, depth + 1);
     }
   }
 
-  // Create root nodes
   for (const cat of categories) {
     if (counter >= 10000) break;
 
@@ -90,7 +87,7 @@ function loadStressTestData() {
     });
 
     tree.expanded.add(node.id);
-    buildSubtree(node.id, funcCode, 0, 10000);
+    buildSubtree(node.id, 1);
   }
 
   renderAll();
